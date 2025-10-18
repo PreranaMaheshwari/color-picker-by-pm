@@ -4,6 +4,7 @@ import { useState } from "react"
 import ColorPalette from "./ColorPalette"
 import PostPreview from "./PostPreview"
 import BackgroundStyleSelector from "./BackgroundStyleSelector"
+import ColorWheelSection from "./ColorWheelSection"
 
 // Expanded color palette inspired by modern UI design
 const colorPalette = [
@@ -43,6 +44,7 @@ export default function ColorPairingTool() {
     { id: 3, colors: [], gradientType: "solid" },
   ])
   const [selectedPostId, setSelectedPostId] = useState(1)
+  const [activeTab, setActiveTab] = useState<"swatches" | "wheel">("swatches")
 
   const handleSelectColor = (color: string) => {
     setPosts((prevPosts) =>
@@ -52,8 +54,18 @@ export default function ColorPairingTool() {
               ...post,
               colors: post.colors.includes(color)
                 ? post.colors.filter((c) => c !== color)
-                : [...post.colors, color].slice(-3),
+                : [...post.colors, color].slice(-5), // Increased to 5 colors
             }
+          : post,
+      ),
+    )
+  }
+
+  const handleWheelColorsChange = (colors: string[]) => {
+    setPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post.id === selectedPostId
+          ? { ...post, colors }
           : post,
       ),
     )
@@ -77,7 +89,7 @@ export default function ColorPairingTool() {
         <h1 className="text-3xl font-medium text-gray-900 mb-6">Color Pairing Tool</h1>
         <div className="mb-6 space-y-2">
           <p className="text-gray-600 leading-relaxed">
-            Create custom backgrounds for your posts by selecting colors from the palette. Choose up to three colors and
+            Create custom backgrounds for your posts by selecting colors from swatches or using the color wheel. Choose up to five colors and
             experiment with different gradient styles.
           </p>
           <p className="text-gray-600 leading-relaxed">
@@ -105,14 +117,50 @@ export default function ColorPairingTool() {
 
           {/* Right Column - Controls */}
           <div className="space-y-8">
+            {/* Color Selection Tabs */}
             <div>
-              <h2 className="text-lg font-medium text-gray-700 mb-4">Select Colors (up to 3)</h2>
-              <ColorPalette
-                colors={colorPalette}
-                onSelectColor={handleSelectColor}
-                selectedColors={selectedPost.colors}
-              />
-              <p className="mt-2 text-sm text-gray-500">Selected: {selectedPost.colors.length}/3 colors</p>
+              <div className="flex space-x-1 mb-4">
+                <button
+                  onClick={() => setActiveTab("swatches")}
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    activeTab === "swatches"
+                      ? "bg-gray-900 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  Color Swatches
+                </button>
+                <button
+                  onClick={() => setActiveTab("wheel")}
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    activeTab === "wheel"
+                      ? "bg-gray-900 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  Color Wheel
+                </button>
+              </div>
+
+              {activeTab === "swatches" && (
+                <div>
+                  <h2 className="text-lg font-medium text-gray-700 mb-4">Select Colors (up to 5)</h2>
+                  <ColorPalette
+                    colors={colorPalette}
+                    onSelectColor={handleSelectColor}
+                    selectedColors={selectedPost.colors}
+                  />
+                  <p className="mt-2 text-sm text-gray-500">Selected: {selectedPost.colors.length}/5 colors</p>
+                </div>
+              )}
+
+              {activeTab === "wheel" && (
+                <ColorWheelSection
+                  selectedColors={selectedPost.colors}
+                  onColorsChange={handleWheelColorsChange}
+                  maxColors={5}
+                />
+              )}
             </div>
 
             <div>

@@ -9,6 +9,7 @@ export default function BackgroundStyleSelector({ value, onChange }: BackgroundS
     { value: "linear", label: "Linear Gradient" },
     { value: "radial", label: "Radial Gradient" },
     { value: "mesh", label: "Mesh Gradient" },
+    { value: "random", label: "Random Mix" },
   ]
 
   return (

@@ -76,6 +76,16 @@ function getBackgroundStyle(colors: string[], gradientType: string): CSSProperti
 
   const gradientColors = colors.join(", ")
 
+  // Handle random gradient type
+  if (gradientType.startsWith("random-")) {
+    const randomColors = gradientType.split("-").slice(1).join("-").split(",")
+    const randomGradientColors = randomColors.join(", ")
+    const isLinear = Math.random() > 0.5
+    return isLinear 
+      ? { background: `linear-gradient(${Math.random() * 360}deg, ${randomGradientColors})` }
+      : { background: `radial-gradient(circle at ${Math.random() * 100}% ${Math.random() * 100}%, ${randomGradientColors})` }
+  }
+
   switch (gradientType) {
     case "linear":
       return { background: `linear-gradient(135deg, ${gradientColors})` }
@@ -87,6 +97,16 @@ function getBackgroundStyle(colors: string[], gradientType: string): CSSProperti
       }
     case "solid":
       return { background: colors[0] }
+    case "random":
+      // Generate a random gradient using the selected colors
+      const shuffledColors = [...colors].sort(() => Math.random() - 0.5)
+      const numColors = Math.floor(Math.random() * Math.min(colors.length, 3)) + 1
+      const selectedColors = shuffledColors.slice(0, numColors)
+      const randomGradientColors = selectedColors.join(", ")
+      const isLinear = Math.random() > 0.5
+      return isLinear 
+        ? { background: `linear-gradient(${Math.random() * 360}deg, ${randomGradientColors})` }
+        : { background: `radial-gradient(circle at ${Math.random() * 100}% ${Math.random() * 100}%, ${randomGradientColors})` }
     default:
       return { background: colors[0] }
   }
