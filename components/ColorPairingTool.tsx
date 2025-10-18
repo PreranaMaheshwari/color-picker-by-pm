@@ -5,6 +5,8 @@ import ColorPalette from "./ColorPalette"
 import PostPreview from "./PostPreview"
 import BackgroundStyleSelector from "./BackgroundStyleSelector"
 import ColorWheelSection from "./ColorWheelSection"
+import ChromaBot from "./ChromaBot"
+import AIKeywordGenerator from "./AIKeywordGenerator"
 
 // Expanded color palette inspired by modern UI design
 const colorPalette = [
@@ -37,14 +39,20 @@ const colorPalette = [
   "#9B59B6", // Amethyst
 ]
 
+interface Post {
+  id: number
+  colors: string[]
+  gradientType: string
+}
+
 export default function ColorPairingTool() {
-  const [posts, setPosts] = useState([
+  const [posts, setPosts] = useState<Post[]>([
     { id: 1, colors: [], gradientType: "solid" },
     { id: 2, colors: [], gradientType: "solid" },
     { id: 3, colors: [], gradientType: "solid" },
   ])
   const [selectedPostId, setSelectedPostId] = useState(1)
-  const [activeTab, setActiveTab] = useState<"swatches" | "wheel">("swatches")
+  const [activeTab, setActiveTab] = useState<"swatches" | "wheel" | "chromabot">("swatches")
 
   const handleSelectColor = (color: string) => {
     setPosts((prevPosts) =>
@@ -66,6 +74,16 @@ export default function ColorPairingTool() {
       prevPosts.map((post) =>
         post.id === selectedPostId
           ? { ...post, colors }
+          : post,
+      ),
+    )
+  }
+
+  const handleChromaBotColorSelect = (colors: string[]) => {
+    setPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post.id === selectedPostId
+          ? { ...post, colors: [...post.colors, ...colors].slice(0, 5) }
           : post,
       ),
     )
@@ -122,23 +140,33 @@ export default function ColorPairingTool() {
               <div className="flex space-x-1 mb-4">
                 <button
                   onClick={() => setActiveTab("swatches")}
-                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                     activeTab === "swatches"
                       ? "bg-gray-900 text-white"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
-                  Color Swatches
+                  Swatches
                 </button>
                 <button
                   onClick={() => setActiveTab("wheel")}
-                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                     activeTab === "wheel"
                       ? "bg-gray-900 text-white"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
                   Color Wheel
+                </button>
+                <button
+                  onClick={() => setActiveTab("chromabot")}
+                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    activeTab === "chromabot"
+                      ? "bg-gray-900 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  ChromaBot
                 </button>
               </div>
 
@@ -160,6 +188,25 @@ export default function ColorPairingTool() {
                   onColorsChange={handleWheelColorsChange}
                   maxColors={5}
                 />
+              )}
+
+              {activeTab === "chromabot" && (
+                <div className="space-y-4">
+                  <div>
+                    <h2 className="text-lg font-medium text-gray-700 mb-4">ChromaBot - AI Color Assistant</h2>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Describe your project, industry, or mood, and ChromaBot will suggest colors that bring your ideas to life!
+                    </p>
+                  </div>
+                  
+                  <AIKeywordGenerator onKeywordSelect={(keyword) => {
+                    // Auto-switch to ChromaBot tab and trigger a message
+                    setActiveTab("chromabot")
+                    // This would ideally trigger ChromaBot to process the keyword
+                  }} />
+                  
+                  <ChromaBot onColorSelect={handleChromaBotColorSelect} />
+                </div>
               )}
             </div>
 
