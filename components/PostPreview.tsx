@@ -13,26 +13,7 @@ export default function PostPreview({ colors, gradientType, isSelected, onClick 
   const handleDownload = (e: React.MouseEvent) => {
     e.stopPropagation() // Prevent triggering the onClick for the post selection
     
-    const colorData = {
-      colors: colors,
-      gradientType: gradientType,
-      css: getCSSString(colors, gradientType),
-      timestamp: new Date().toISOString(),
-      hexColors: colors,
-      rgbColors: colors.map(color => hexToRgb(color)),
-    }
-    
-    const dataStr = JSON.stringify(colorData, null, 2)
-    const dataBlob = new Blob([dataStr], { type: 'application/json' })
-    const url = URL.createObjectURL(dataBlob)
-    
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `color-combination-${Date.now()}.json`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
+    generateColorPaletteImage(colors, gradientType)
   }
 
   return (
@@ -111,33 +92,119 @@ function getBackgroundStyle(colors: string[], gradientType: string): CSSProperti
   }
 }
 
-function getCSSString(colors: string[], gradientType: string): string {
-  if (colors.length === 0) return "background: #F0F0F0;"
-
-  const gradientColors = colors.join(", ")
-
-  switch (gradientType) {
-    case "linear":
-      return `background: linear-gradient(135deg, ${gradientColors});`
-    case "radial":
-      return `background: radial-gradient(circle, ${gradientColors});`
-    case "mesh":
-      return `background: radial-gradient(circle at 33% 33%, ${gradientColors}), radial-gradient(circle at 66% 66%, ${gradientColors});`
-    case "solid":
-      return `background: ${colors[0]};`
-    default:
-      return `background: ${colors[0]};`
+function generateColorPaletteImage(colors: string[], gradientType: string) {
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+  
+  if (!ctx) return
+  
+  // Set canvas dimensions
+  const width = 800
+  const height = 600
+  canvas.width = width
+  canvas.height = height
+  
+  // Create gradient based on type
+  let gradient: CanvasGradient
+  
+  if (colors.length === 0) {
+    // Default gray background
+    ctx.fillStyle = '#F0F0F0'
+    ctx.fillRect(0, 0, width, height)
+  } else {
+    switch (gradientType) {
+      case "linear":
+        gradient = ctx.createLinearGradient(0, 0, width, height)
+        colors.forEach((color, index) => {
+          gradient.addColorStop(index / (colors.length - 1), color)
+        })
+        ctx.fillStyle = gradient
+        ctx.fillRect(0, 0, width, height)
+        break
+        
+      case "radial":
+        gradient = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, Math.max(width, height)/2)
+        colors.forEach((color, index) => {
+          gradient.addColorStop(index / (colors.length - 1), color)
+        })
+        ctx.fillStyle = gradient
+        ctx.fillRect(0, 0, width, height)
+        break
+        
+      case "mesh":
+        // Create multiple radial gradients for mesh effect
+        colors.forEach((color, index) => {
+          const x = (width / (colors.length + 1)) * (index + 1)
+          const y = height / 2
+          const radius = Math.min(width, height) / 3
+          
+          const meshGradient = ctx.createRadialGradient(x, y, 0, x, y, radius)
+          meshGradient.addColorStop(0, color)
+          meshGradient.addColorStop(1, 'transparent')
+          
+          ctx.fillStyle = meshGradient
+          ctx.fillRect(0, 0, width, height)
+        })
+        break
+        
+      case "solid":
+        ctx.fillStyle = colors[0]
+        ctx.fillRect(0, 0, width, height)
+        break
+        
+      default:
+        ctx.fillStyle = colors[0]
+        ctx.fillRect(0, 0, width, height)
+    }
   }
-}
-
-function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-  return result
-    ? {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16),
-      }
-    : null
+  
+  // Add color swatches at the bottom
+  const swatchSize = 60
+  const swatchSpacing = 80
+  const startX = (width - (colors.length * swatchSpacing)) / 2
+  const swatchY = height - 100
+  
+  colors.forEach((color, index) => {
+    const x = startX + (index * swatchSpacing)
+    
+    // Draw swatch background
+    ctx.fillStyle = color
+    ctx.fillRect(x - swatchSize/2, swatchY - swatchSize/2, swatchSize, swatchSize)
+    
+    // Draw border
+    ctx.strokeStyle = '#ffffff'
+    ctx.lineWidth = 3
+    ctx.strokeRect(x - swatchSize/2, swatchY - swatchSize/2, swatchSize, swatchSize)
+    
+    // Draw color code
+    ctx.fillStyle = '#ffffff'
+    ctx.font = 'bold 14px Arial'
+    ctx.textAlign = 'center'
+    ctx.fillText(color, x, swatchY + swatchSize/2 + 20)
+  })
+  
+  // Add title
+  ctx.fillStyle = '#ffffff'
+  ctx.font = 'bold 24px Arial'
+  ctx.textAlign = 'center'
+  ctx.fillText('Color Palette', width/2, 50)
+  
+  // Add gradient type
+  ctx.font = '16px Arial'
+  ctx.fillText(`${gradientType.charAt(0).toUpperCase() + gradientType.slice(1)} Gradient`, width/2, 80)
+  
+  // Convert to PNG and download
+  canvas.toBlob((blob) => {
+    if (blob) {
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `color-palette-${Date.now()}.png`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    }
+  }, 'image/png')
 }
 
