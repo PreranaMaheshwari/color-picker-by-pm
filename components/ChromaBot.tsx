@@ -65,10 +65,11 @@ export default function ChromaBot({ onColorSelect }: ChromaBotProps) {
       const suggestions = await generateColorsFromKeyword(input.trim())
       const primarySuggestion = suggestions[0] // Use the highest confidence suggestion
       
+      const colorCount = primarySuggestion.colorCount || primarySuggestion.colors.length
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: "bot",
-        content: `Here are some colors that resonate with "${input.trim()}":`,
+        content: `Here are ${colorCount} colors that resonate with "${input.trim()}":`,
         colors: primarySuggestion.colors,
         suggestions: suggestions,
         timestamp: new Date(),
@@ -157,16 +158,29 @@ export default function ChromaBot({ onColorSelect }: ChromaBotProps) {
 
                       {/* Show reasoning if available */}
                       {message.suggestions && message.suggestions[0] && (
-                        <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
-                          <div className="flex items-center space-x-1 mb-1">
+                        <div className="text-xs text-gray-600 bg-gray-50 p-3 rounded-lg border">
+                          <div className="flex items-center space-x-1 mb-2">
                             <Lightbulb className="w-3 h-3" />
                             <span className="font-medium">{message.suggestions[0].category}</span>
                             <span className="text-gray-400">•</span>
                             <span className="text-gray-500">
                               {Math.round(message.suggestions[0].confidence * 100)}% confidence
                             </span>
+                            {message.suggestions[0].colorCount && (
+                              <>
+                                <span className="text-gray-400">•</span>
+                                <span className="text-gray-500">
+                                  {message.suggestions[0].colorCount} colors
+                                </span>
+                              </>
+                            )}
                           </div>
-                          <p>{message.suggestions[0].reasoning}</p>
+                          <p className="mb-1">{message.suggestions[0].reasoning}</p>
+                          {message.suggestions[0].context && (
+                            <p className="text-gray-500 italic">
+                              Context: {message.suggestions[0].context.replace('_', ' ')}
+                            </p>
+                          )}
                         </div>
                       )}
 
